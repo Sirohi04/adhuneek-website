@@ -1,0 +1,9 @@
+{
+  "name": "adhuneek-website",
+  "version": "1.0.0",
+  "description": "Modern Adhuneek company website with stock backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

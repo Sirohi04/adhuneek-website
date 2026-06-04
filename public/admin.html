@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adhuneek Admin | Stock Backend</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="admin-body">
+  <main class="admin-shell">
+    <section class="login-panel" id="loginPanel">
+      <img src="/assets/logo.jpeg" alt="Adhuneek logo">
+      <h1>Adhuneek backend</h1>
+      <p>Manage products, stock and customer enquiries.</p>
+      <form id="loginForm">
+        <label>Admin password<input name="password" type="password" value="adhuneek2026" required></label>
+        <button class="primary" type="submit">Open dashboard</button>
+      </form>
+      <p class="form-status" id="loginStatus"></p>
+    </section>
+
+    <section class="dashboard hidden" id="dashboard">
+      <header class="admin-topbar">
+        <div>
+          <p class="eyebrow">Admin dashboard</p>
+          <h1>Stock and enquiries</h1>
+        </div>
+        <div class="admin-actions">
+          <a class="secondary" href="/">View website</a>
+          <button class="secondary" id="exportCsv">Export CSV</button>
+          <button class="secondary" id="exportMovements">Export ledger</button>
+        </div>
+      </header>
+
+      <section class="metrics" id="metrics"></section>
+
+      <section class="admin-panel ledger-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Daily stock and sales entry</h2>
+            <p>Record what sold, what stock came in, or stock correction for any product.</p>
+          </div>
+          <label>Report period
+            <select id="reportPeriod">
+              <option value="day">Day wise</option>
+              <option value="month">Month wise</option>
+              <option value="year">Year wise</option>
+            </select>
+          </label>
+        </div>
+        <form class="movement-form" id="movementForm">
+          <label>Product<select name="productId" id="movementProduct" required></select></label>
+          <label>Type
+            <select name="type">
+              <option value="sale">Sold / stock out</option>
+              <option value="restock">Stock in / production</option>
+              <option value="adjustment">Set final stock</option>
+            </select>
+          </label>
+          <label>Quantity<input name="quantity" type="number" min="1" value="1" required></label>
+          <label>Date<input name="date" type="date" required></label>
+          <label>Buyer / note name<input name="party" placeholder="Dealer, shop, customer"></label>
+          <label class="wide">Note<input name="note" placeholder="Invoice, batch, color, transport, etc."></label>
+          <button class="primary wide" type="submit">Save stock record</button>
+        </form>
+      </section>
+
+      <section class="admin-layout report-layout">
+        <div class="admin-panel">
+          <h2>Sales report</h2>
+          <div class="report-table" id="periodReport"></div>
+        </div>
+        <div class="admin-panel">
+          <h2>Product wise sold</h2>
+          <div class="report-table" id="productReport"></div>
+        </div>
+      </section>
+
+      <section class="admin-layout">
+        <div class="admin-panel">
+          <div class="panel-head">
+            <h2>Products</h2>
+            <button class="secondary" id="refreshData">Refresh</button>
+          </div>
+          <div class="stock-table" id="stockTable"></div>
+        </div>
+
+        <aside class="admin-panel">
+          <h2>Add product</h2>
+          <form class="admin-form" id="productForm">
+            <label>Name<input name="name" required></label>
+            <label>Category<input name="category" required></label>
+            <label>Sizes<input name="sizes" required></label>
+            <label>Material<input name="material" value="100% virgin plastic"></label>
+            <label>Image path<input name="image" value="/assets/products/bucket.jpg"></label>
+            <label>Stock<input name="stock" type="number" min="0" value="100"></label>
+            <label>Low stock alert<input name="lowStockAt" type="number" min="0" value="25"></label>
+            <button class="primary" type="submit">Add product</button>
+          </form>
+        </aside>
+      </section>
+
+      <section class="admin-panel inquiries-panel">
+        <h2>Customer enquiries</h2>
+        <div class="inquiries" id="inquiries"></div>
+      </section>
+
+      <section class="admin-panel">
+        <h2>Recent stock ledger</h2>
+        <div class="ledger-list" id="ledgerList"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

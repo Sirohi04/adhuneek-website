@@ -1,0 +1,186 @@
+{
+  "company": {
+    "name": "Adhuneek",
+    "location": "Koshi Kotwan UPSIDC Area, Nabipur, Mathura",
+    "headOffice": "Greater Noida",
+    "founded": "2025",
+    "email": "sales@adhuneek.example",
+    "phone": "+91 98765 43210"
+  },
+  "products": [
+    {
+      "id": "bucket",
+      "name": "Classic Household Bucket",
+      "category": "Buckets",
+      "sizes": "10 Ltr, 15 Ltr, 20 Ltr, 25 Ltr",
+      "material": "100% virgin plastic",
+      "image": "/assets/products/bucket.jpg",
+      "stock": 6,
+      "lowStockAt": 250,
+      "status": "In stock",
+      "featured": true
+    },
+    {
+      "id": "mug",
+      "name": "Utility Bath Mug",
+      "category": "Mugs",
+      "sizes": "Multi-size household range",
+      "material": "100% virgin plastic",
+      "image": "/assets/products/mug.jpg",
+      "stock": 2150,
+      "lowStockAt": 400,
+      "status": "In stock",
+      "featured": true
+    },
+    {
+      "id": "tasla",
+      "name": "17 Inch Tasla",
+      "category": "Tasla",
+      "sizes": "17 inch",
+      "material": "Impact-resistant plastic",
+      "image": "/assets/products/tasla.jpg",
+      "stock": 730,
+      "lowStockAt": 180,
+      "status": "In stock",
+      "featured": false
+    },
+    {
+      "id": "tub",
+      "name": "22 Inch Washing Tub",
+      "category": "Tubs",
+      "sizes": "22 inch",
+      "material": "Durable household plastic",
+      "image": "/assets/products/tub.jpg",
+      "stock": 610,
+      "lowStockAt": 150,
+      "status": "In stock",
+      "featured": true
+    },
+    {
+      "id": "dustpan",
+      "name": "Cleaning Dustpan",
+      "category": "Cleaning",
+      "sizes": "Standard household size",
+      "material": "Lightweight virgin plastic",
+      "image": "/assets/products/dustpan.jpg",
+      "stock": 460,
+      "lowStockAt": 120,
+      "status": "In stock",
+      "featured": false
+    },
+    {
+      "id": "washing-machine-roller",
+      "name": "Washing Machine Roller",
+      "category": "Machine Parts",
+      "sizes": "Compatible roller set",
+      "material": "Heavy-duty plastic and fitted parts",
+      "image": "/assets/products/washing-machine-roller.jpg",
+      "stock": 340,
+      "lowStockAt": 90,
+      "status": "In stock",
+      "featured": true
+    },
+    {
+      "id": "washing-machine-safety-cover",
+      "name": "Washing Machine Safety Cover",
+      "category": "Machine Parts",
+      "sizes": "Round safety cover",
+      "material": "Rigid molded plastic",
+      "image": "/assets/products/washing-machine-safety-cover.jpg",
+      "stock": 220,
+      "lowStockAt": 80,
+      "status": "In stock",
+      "featured": false
+    },
+    {
+      "id": "bottle-jar-cap",
+      "name": "Bottle Jar Cap",
+      "category": "Caps",
+      "sizes": "Utility jar cap range",
+      "material": "Food-safe plastic finish",
+      "image": "/assets/products/bottle-jar-cap.jpg",
+      "stock": 3600,
+      "lowStockAt": 700,
+      "status": "In stock",
+      "featured": false
+    },
+    {
+      "id": "dustbin",
+      "name": "Swing Dustbin",
+      "category": "Cleaning",
+      "sizes": "Household and utility sizes",
+      "material": "Long-life molded plastic",
+      "image": "/assets/products/dustbin.jpg",
+      "stock": 380,
+      "lowStockAt": 100,
+      "status": "In stock",
+      "featured": true
+    },
+    {
+      "id": "patra",
+      "name": "Plastic Patra Stool",
+      "category": "Furniture",
+      "sizes": "Compact utility stool",
+      "material": "Load-bearing plastic",
+      "image": "/assets/products/patra.jpg",
+      "stock": 290,
+      "lowStockAt": 75,
+      "status": "In stock",
+      "featured": false
+    },
+    {
+      "id": "side-rack",
+      "name": "Multi-Tier Side Rack",
+      "category": "Storage",
+      "sizes": "Multi-tier rack",
+      "material": "Strong molded plastic",
+      "image": "/assets/products/side-rack.jpg",
+      "stock": 180,
+      "lowStockAt": 60,
+      "status": "In stock",
+      "featured": true
+    }
+  ],
+  "inquiries": [],
+  "movements": [
+    {
+      "id": "MOV-1780600873655",
+      "type": "adjustment",
+      "productId": "bucket",
+      "productName": "Classic Household Bucket",
+      "quantity": 6,
+      "beforeStock": 1279,
+      "afterStock": 6,
+      "party": "",
+      "note": "",
+      "date": "2026-06-04",
+      "createdAt": "2026-06-04T19:21:13.655Z"
+    },
+    {
+      "id": "MOV-1780600792292",
+      "type": "sale",
+      "productId": "bucket",
+      "productName": "Classic Household Bucket",
+      "quantity": 9,
+      "beforeStock": 1288,
+      "afterStock": 1279,
+      "party": "",
+      "note": "",
+      "date": "2026-06-04",
+      "createdAt": "2026-06-04T19:19:52.292Z"
+    },
+    {
+      "id": "MOV-1780600781482",
+      "type": "restock",
+      "productId": "bucket",
+      "productName": "Classic Household Bucket",
+      "quantity": 8,
+      "beforeStock": 1280,
+      "afterStock": 1288,
+      "party": "",
+      "note": "",
+      "date": "2026-06-04",
+      "createdAt": "2026-06-04T19:19:41.482Z"
+    }
+  ]
+}
