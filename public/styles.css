@@ -1210,13 +1210,15 @@ textarea:focus {
 }
 
 .report-table,
-.ledger-list {
+.ledger-list,
+.rate-card-table {
   display: grid;
   gap: 10px;
 }
 
 .report-row,
-.ledger-entry {
+.ledger-entry,
+.rate-card-row {
   display: grid;
   grid-template-columns: minmax(160px, 1fr) repeat(3, auto);
   gap: 12px;
@@ -1228,6 +1230,7 @@ textarea:focus {
 }
 
 .report-row span,
+.rate-card-row span,
 .ledger-entry p,
 .ledger-entry small {
   color: var(--muted);
@@ -1339,6 +1342,14 @@ textarea:focus {
     grid-template-columns: 1fr 1fr;
   }
 
+  .admin-color-stock {
+    grid-column: 1 / -1;
+  }
+
+  .admin-color-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .movement-form,
   .report-layout,
   .report-row {
@@ -1439,6 +1450,10 @@ textarea:focus {
 
   .stock-row {
     grid-template-columns: 1fr;
+  }
+
+  .admin-color-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .inquiry {
@@ -1895,7 +1910,36 @@ textarea:focus {
 }
 
 .stock-row {
-  grid-template-columns: 64px minmax(160px, 1.3fr) minmax(110px, 0.8fr) 120px 120px auto;
+  grid-template-columns: 64px minmax(160px, 1.2fr) minmax(110px, 0.7fr) 105px 105px 105px;
+}
+
+.admin-color-stock {
+  grid-column: 1 / -2;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.admin-color-stock > strong {
+  color: #0e2238;
+}
+
+.admin-color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(76px, 1fr));
+  gap: 8px;
+}
+
+.admin-color-grid label {
+  gap: 5px;
+  font-size: 0.78rem;
+}
+
+.admin-color-grid input {
+  padding: 8px;
 }
 
 .metric {

@@ -88,7 +88,21 @@ function ensureMovements(db) {
   if (!Array.isArray(db.movements)) db.movements = [];
 }
 
+function ensureProductCommercials(db) {
+  const defaultColors = ["Blue", "Red", "Green", "Pink", "White", "Yellow"];
+  db.products.forEach(product => {
+    if (typeof product.rate !== "number") product.rate = Number(product.rate || 0);
+    if (!product.colorStock || typeof product.colorStock !== "object" || Array.isArray(product.colorStock)) {
+      product.colorStock = {};
+    }
+    defaultColors.forEach(color => {
+      if (product.colorStock[color] === undefined) product.colorStock[color] = 0;
+    });
+  });
+}
+
 function publicProducts(db) {
+  ensureProductCommercials(db);
   return db.products.map(product => ({
     ...product,
     stockLabel: product.stock <= product.lowStockAt ? "Limited stock" : "Ready for bulk orders"
@@ -226,6 +240,7 @@ async function handler(req, res) {
 
   if (req.method === "GET" && endpoint === "/admin/dashboard") {
     ensureMovements(db);
+    ensureProductCommercials(db);
     const lowStock = db.products.filter(p => Number(p.stock) <= Number(p.lowStockAt));
     res.status(200).json({
       company: db.company,
@@ -264,12 +279,21 @@ async function handler(req, res) {
     if (type === "restock") afterStock = beforeStock + quantity;
     if (type === "adjustment") afterStock = quantity;
     product.stock = afterStock;
+    const color = String(body.color || "").trim();
+    if (color) {
+      if (!product.colorStock || typeof product.colorStock !== "object") product.colorStock = {};
+      const beforeColorStock = Number(product.colorStock[color] || 0);
+      if (type === "sale") product.colorStock[color] = Math.max(0, beforeColorStock - quantity);
+      if (type === "restock") product.colorStock[color] = beforeColorStock + quantity;
+      if (type === "adjustment") product.colorStock[color] = quantity;
+    }
     const movement = {
       id: `MOV-${Date.now()}`,
       type,
       productId: product.id,
       productName: product.name,
       quantity,
+      color,
       beforeStock,
       afterStock,
       party: String(body.party || "").trim(),
@@ -303,6 +327,8 @@ async function handler(req, res) {
       image: String(body.image || "/assets/products/bucket.jpg"),
       stock: Number(body.stock || 0),
       lowStockAt: Number(body.lowStockAt || 50),
+      rate: Number(body.rate || 0),
+      colorStock: body.colorStock && typeof body.colorStock === "object" ? body.colorStock : {},
       status: String(body.status || "In stock"),
       featured: Boolean(body.featured)
     };
@@ -323,9 +349,14 @@ async function handler(req, res) {
     ["name", "category", "sizes", "material", "image", "status"].forEach(key => {
       if (body[key] !== undefined) product[key] = String(body[key]);
     });
-    ["stock", "lowStockAt"].forEach(key => {
+    ["stock", "lowStockAt", "rate"].forEach(key => {
       if (body[key] !== undefined) product[key] = Number(body[key]);
     });
+    if (body.colorStock && typeof body.colorStock === "object" && !Array.isArray(body.colorStock)) {
+      product.colorStock = Object.fromEntries(
+        Object.entries(body.colorStock).map(([color, quantity]) => [color, Math.max(0, Number(quantity || 0))])
+      );
+    }
     if (body.featured !== undefined) product.featured = Boolean(body.featured);
     await writeDb(db);
     res.status(200).json({ product });
@@ -353,8 +384,8 @@ async function handler(req, res) {
           ...db.movements.map(m => [m.id, m.date, m.type, m.productName, m.quantity, m.beforeStock, m.afterStock, m.party, m.note])
         ]
       : [
-          ["id", "name", "category", "sizes", "stock", "lowStockAt", "status"],
-          ...db.products.map(p => [p.id, p.name, p.category, p.sizes, p.stock, p.lowStockAt, p.status])
+          ["id", "name", "category", "sizes", "stock", "lowStockAt", "rate", "colorStock", "status"],
+          ...db.products.map(p => [p.id, p.name, p.category, p.sizes, p.stock, p.lowStockAt, p.rate || 0, JSON.stringify(p.colorStock || {}), p.status])
         ];
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.status(200).send(csv(rows));

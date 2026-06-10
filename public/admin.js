@@ -16,6 +16,8 @@ const periodReport = document.querySelector("#periodReport");
 const productReport = document.querySelector("#productReport");
 const ledgerList = document.querySelector("#ledgerList");
 const adminStatus = document.querySelector("#adminStatus");
+const rateCardTable = document.querySelector("#rateCardTable");
+const STOCK_COLORS = ["Blue", "Red", "Green", "Pink", "White", "Yellow"];
 
 localStorage.removeItem("adhuneekAdminToken");
 let token = "";
@@ -83,6 +85,7 @@ async function loadDashboard() {
   renderMetrics();
   renderMovementOptions();
   renderReports();
+  renderRateCard();
   renderStockTable();
   renderInquiries();
   renderLedger();
@@ -126,6 +129,18 @@ function renderReports() {
   `).join("") : "<p>No product movement yet.</p>";
 }
 
+function renderRateCard() {
+  if (!rateCardTable) return;
+  rateCardTable.innerHTML = dashboardData.products.map(product => `
+    <div class="rate-card-row">
+      <strong>${product.name}</strong>
+      <span>${product.category}</span>
+      <span>${Number(product.rate || 0) ? `Rs. ${product.rate}` : "Rate not set"}</span>
+      <span>Total stock ${product.stock}</span>
+    </div>
+  `).join("");
+}
+
 function renderStockTable() {
   stockTable.innerHTML = dashboardData.products.map(product => `
     <div class="stock-row" data-product="${product.id}">
@@ -141,6 +156,15 @@ function renderStockTable() {
       </span>
       <label>Stock<input type="number" min="0" value="${product.stock}" data-field="stock"></label>
       <label>Alert<input type="number" min="0" value="${product.lowStockAt}" data-field="lowStockAt"></label>
+      <label>Rate<input type="number" min="0" value="${Number(product.rate || 0)}" data-field="rate"></label>
+      <div class="admin-color-stock">
+        <strong>Color stock</strong>
+        <div class="admin-color-grid">
+          ${STOCK_COLORS.map(color => `
+            <label><span>${color}</span><input type="number" min="0" value="${Number((product.colorStock || {})[color] || 0)}" data-color="${color}"></label>
+          `).join("")}
+        </div>
+      </div>
       <button class="primary" data-save="${product.id}">Save</button>
     </div>
   `).join("");
@@ -156,6 +180,10 @@ async function saveProduct(id) {
   const payload = {};
   row.querySelectorAll("[data-field]").forEach(input => {
     payload[input.dataset.field] = Number(input.value);
+  });
+  payload.colorStock = {};
+  row.querySelectorAll("[data-color]").forEach(input => {
+    payload.colorStock[input.dataset.color] = Number(input.value || 0);
   });
   try {
     await requestJson(`/api/admin/products/${id}`, {
@@ -220,7 +248,7 @@ function renderLedger() {
     <article class="ledger-entry">
       <div>
         <strong>${movement.productName}</strong>
-        <p>${movement.type.toUpperCase()} | Qty ${movement.quantity} | ${movement.date}</p>
+        <p>${movement.type.toUpperCase()} | Qty ${movement.quantity}${movement.color ? ` | ${movement.color}` : ""} | ${movement.date}</p>
         <small>${movement.beforeStock} to ${movement.afterStock}${movement.party ? ` | ${movement.party}` : ""}${movement.note ? ` | ${movement.note}` : ""}</small>
       </div>
       <span class="ledger-type ${movement.type}">${movement.type}</span>
@@ -234,6 +262,8 @@ productForm.addEventListener("submit", async event => {
   const payload = Object.fromEntries(new FormData(productForm).entries());
   payload.stock = Number(payload.stock || 0);
   payload.lowStockAt = Number(payload.lowStockAt || 0);
+  payload.rate = Number(payload.rate || 0);
+  payload.colorStock = Object.fromEntries(STOCK_COLORS.map(color => [color, 0]));
   try {
     await requestJson("/api/admin/products", {
       method: "POST",
@@ -245,6 +275,7 @@ productForm.addEventListener("submit", async event => {
     productForm.material.value = "100% virgin plastic";
     productForm.stock.value = 100;
     productForm.lowStockAt.value = 25;
+    productForm.rate.value = 0;
     setAdminStatus("Product added.");
     await loadDashboard();
   } catch (error) {

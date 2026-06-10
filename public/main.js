@@ -68,7 +68,7 @@ function renderProducts() {
         <p><strong>Material:</strong> ${product.material}</p>
         <div class="product-meta">
           <span>Stock ${product.stock}</span>
-          <span>${product.featured ? "Featured" : "Catalog item"}</span>
+          <span>${Number(product.rate || 0) ? `Rate Rs. ${product.rate}` : (product.featured ? "Featured" : "Catalog item")}</span>
         </div>
         <div class="color-dots" aria-label="Available color style examples">
           <span style="--dot:#159de0"></span><span style="--dot:#19b8a4"></span><span style="--dot:#f15a4a"></span><span style="--dot:#f7d84b"></span>
@@ -117,6 +117,7 @@ function openProductModal(product) {
         <h2>${product.name}</h2>
         <p><strong>Sizes:</strong> ${product.sizes}</p>
         <p><strong>Material:</strong> ${product.material}</p>
+        <p><strong>Temporary rate:</strong> ${Number(product.rate || 0) ? `Rs. ${product.rate}` : "Available on request"}</p>
         <p><strong>Stock:</strong> ${product.stock} units | ${product.stockLabel}</p>
         <div class="modal-points">
           <span>Bulk enquiry ready</span>

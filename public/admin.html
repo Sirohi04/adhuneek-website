@@ -58,6 +58,17 @@
               <option value="adjustment">Set final stock</option>
             </select>
           </label>
+          <label>Color
+            <select name="color" id="movementColor">
+              <option value="">No color selected</option>
+              <option>Blue</option>
+              <option>Red</option>
+              <option>Green</option>
+              <option>Pink</option>
+              <option>White</option>
+              <option>Yellow</option>
+            </select>
+          </label>
           <label>Quantity<input name="quantity" type="number" min="1" value="1" required></label>
           <label>Date<input name="date" type="date" required></label>
           <label>Buyer / note name<input name="party" placeholder="Dealer, shop, customer"></label>
@@ -77,6 +88,11 @@
         </div>
       </section>
 
+      <section class="admin-panel">
+        <h2>Temporary rate card</h2>
+        <div class="rate-card-table" id="rateCardTable"></div>
+      </section>
+
       <section class="admin-layout">
         <div class="admin-panel">
           <div class="panel-head">
@@ -94,6 +110,7 @@
             <label>Sizes<input name="sizes" required></label>
             <label>Material<input name="material" value="100% virgin plastic"></label>
             <label>Image path<input name="image" value="/assets/products/bucket.jpg"></label>
+            <label>Temporary rate<input name="rate" type="number" min="0" value="0"></label>
             <label>Stock<input name="stock" type="number" min="0" value="100"></label>
             <label>Low stock alert<input name="lowStockAt" type="number" min="0" value="25"></label>
             <button class="primary" type="submit">Add product</button>
