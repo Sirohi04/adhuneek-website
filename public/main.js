@@ -2,6 +2,7 @@ const productGrid = document.querySelector("#productGrid");
 const filters = document.querySelector("#filters");
 const productSearch = document.querySelector("#productSearch");
 const publicRateGrid = document.querySelector("#publicRateGrid");
+const productSelectHint = document.querySelector("#productSelectHint");
 const selectedItems = document.querySelector("#selectedItems");
 const quoteForm = document.querySelector("#quoteForm");
 const formStatus = document.querySelector("#formStatus");
@@ -16,9 +17,21 @@ let searchTerm = "";
 
 document.querySelectorAll("[data-scroll]").forEach(button => {
   button.addEventListener("click", () => {
+    if (button.dataset.scroll === "#quote" && !selected.size) {
+      showProductSelectHint();
+      document.querySelector("#products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     document.querySelector(button.dataset.scroll)?.scrollIntoView({ behavior: "smooth" });
   });
 });
+
+function showProductSelectHint() {
+  if (!productSelectHint) return;
+  productSelectHint.classList.add("visible");
+  productSelectHint.textContent = "Please select a product first. After selection, the enquiry form will open automatically.";
+  setTimeout(() => productSelectHint.classList.remove("visible"), 5500);
+}
 
 async function loadProducts() {
   const response = await fetch("/api/products");
@@ -122,6 +135,7 @@ function renderPublicRateCard() {
 function addProductToEnquiry(product) {
   selected.set(product.id, product);
   renderSelected();
+  productSelectHint?.classList.remove("visible");
   document.querySelector("#quote").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -241,6 +255,10 @@ function observeReveals() {
 }
 
 document.querySelectorAll(".section, .quality-band, .catalog-cta, .quote-section, .stats-band").forEach(element => {
+  element.classList.add("reveal");
+});
+
+document.querySelectorAll(".signature-showcase, .factory-section, .proof-section, .process-section, .market-section, .qc-section, .dealer-support, .final-cta").forEach(element => {
   element.classList.add("reveal");
 });
 
