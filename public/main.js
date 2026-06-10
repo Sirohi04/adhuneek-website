@@ -1,12 +1,17 @@
 const productGrid = document.querySelector("#productGrid");
 const filters = document.querySelector("#filters");
+const productSearch = document.querySelector("#productSearch");
 const selectedItems = document.querySelector("#selectedItems");
 const quoteForm = document.querySelector("#quoteForm");
 const formStatus = document.querySelector("#formStatus");
+const productModal = document.querySelector("#productModal");
+const modalContent = document.querySelector("#modalContent");
+const modalClose = document.querySelector("#modalClose");
 const selected = new Map();
 
 let products = [];
 let activeCategory = "All";
+let searchTerm = "";
 
 document.querySelectorAll("[data-scroll]").forEach(button => {
   button.addEventListener("click", () => {
@@ -40,9 +45,13 @@ function renderFilters() {
 }
 
 function renderProducts() {
-  const visible = activeCategory === "All"
+  const categoryFiltered = activeCategory === "All"
     ? products
     : products.filter(product => product.category === activeCategory);
+  const visible = categoryFiltered.filter(product => {
+    const haystack = `${product.name} ${product.category} ${product.sizes} ${product.material}`.toLowerCase();
+    return haystack.includes(searchTerm);
+  });
 
   productGrid.innerHTML = visible.map(product => `
     <article class="product-card reveal">
@@ -61,7 +70,13 @@ function renderProducts() {
           <span>Stock ${product.stock}</span>
           <span>${product.featured ? "Featured" : "Catalog item"}</span>
         </div>
-        <button class="secondary add-enquiry" data-id="${product.id}">Add to enquiry</button>
+        <div class="color-dots" aria-label="Available color style examples">
+          <span style="--dot:#159de0"></span><span style="--dot:#19b8a4"></span><span style="--dot:#f15a4a"></span><span style="--dot:#f7d84b"></span>
+        </div>
+        <div class="product-actions">
+          <button class="secondary quick-view" data-view="${product.id}">Quick view</button>
+          <button class="secondary add-enquiry" data-id="${product.id}">Add to enquiry</button>
+        </div>
       </div>
     </article>
   `).join("");
@@ -75,10 +90,47 @@ function renderProducts() {
   productGrid.querySelectorAll("[data-id]").forEach(button => {
     button.addEventListener("click", () => {
       const product = products.find(item => item.id === button.dataset.id);
-      selected.set(product.id, product);
-      renderSelected();
-      document.querySelector("#quote").scrollIntoView({ behavior: "smooth", block: "start" });
+      addProductToEnquiry(product);
     });
+  });
+
+  productGrid.querySelectorAll("[data-view]").forEach(button => {
+    button.addEventListener("click", () => {
+      const product = products.find(item => item.id === button.dataset.view);
+      openProductModal(product);
+    });
+  });
+}
+
+function addProductToEnquiry(product) {
+  selected.set(product.id, product);
+  renderSelected();
+  document.querySelector("#quote").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openProductModal(product) {
+  modalContent.innerHTML = `
+    <div class="modal-product">
+      <div class="modal-image"><img src="${product.image}" alt="${product.name}"></div>
+      <div class="modal-copy">
+        <p class="eyebrow">${product.category}</p>
+        <h2>${product.name}</h2>
+        <p><strong>Sizes:</strong> ${product.sizes}</p>
+        <p><strong>Material:</strong> ${product.material}</p>
+        <p><strong>Stock:</strong> ${product.stock} units | ${product.stockLabel}</p>
+        <div class="modal-points">
+          <span>Bulk enquiry ready</span>
+          <span>Dealer supply focused</span>
+          <span>Catalog listed item</span>
+        </div>
+        <button class="primary" data-modal-enquiry="${product.id}">Add to enquiry</button>
+      </div>
+    </div>
+  `;
+  productModal.classList.remove("hidden");
+  modalContent.querySelector("[data-modal-enquiry]").addEventListener("click", () => {
+    productModal.classList.add("hidden");
+    addProductToEnquiry(product);
   });
 }
 
@@ -135,6 +187,16 @@ quoteForm.addEventListener("submit", async event => {
   selected.clear();
   renderSelected();
   formStatus.textContent = `Enquiry sent. Reference: ${data.inquiry.id}`;
+});
+
+productSearch?.addEventListener("input", () => {
+  searchTerm = productSearch.value.trim().toLowerCase();
+  renderProducts();
+});
+
+modalClose?.addEventListener("click", () => productModal.classList.add("hidden"));
+productModal?.addEventListener("click", event => {
+  if (event.target === productModal) productModal.classList.add("hidden");
 });
 
 loadProducts().catch(() => {

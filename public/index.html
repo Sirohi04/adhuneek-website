@@ -17,6 +17,7 @@
       <a href="#products">Products</a>
       <a href="#quality">Quality</a>
       <a href="#dealers">Dealers</a>
+      <a href="#faq">FAQ</a>
       <a href="/admin.html">Admin</a>
     </nav>
     <button class="quote-button" data-scroll="#quote">Get quote</button>
@@ -134,7 +135,10 @@
           <p class="eyebrow">Product range</p>
           <h2>Browse products by category</h2>
         </div>
-        <div class="filters" id="filters" aria-label="Product category filters"></div>
+        <div class="product-tools">
+          <label class="product-search">Search products<input id="productSearch" type="search" placeholder="Bucket, mug, dustbin..."></label>
+          <div class="filters" id="filters" aria-label="Product category filters"></div>
+        </div>
       </div>
       <div class="product-grid" id="productGrid" aria-live="polite"></div>
     </section>
@@ -173,6 +177,18 @@
       </div>
     </section>
 
+    <section class="proof-section">
+      <div>
+        <p class="eyebrow">Built for repeat business</p>
+        <h2>Made for dealers who need products that move quickly.</h2>
+      </div>
+      <div class="proof-grid">
+        <article><strong>Retail display ready</strong><p>Clean colors, simple forms and recognizable product categories.</p></article>
+        <article><strong>Stock visibility</strong><p>Admin tools keep stock, sales and enquiry records in one place.</p></article>
+        <article><strong>Bulk enquiry flow</strong><p>Customers can select products and send requirements directly.</p></article>
+      </div>
+    </section>
+
     <section class="quality-band" id="quality">
       <div class="quality-visual">
         <img src="/assets/products/tub.jpg" alt="Adhuneek tub product">
@@ -197,6 +213,31 @@
         <div><span>01</span><strong>Select products</strong><p>Add products to your enquiry list from the range.</p></div>
         <div><span>02</span><strong>Share requirements</strong><p>Tell us your city, business type and expected quantities.</p></div>
         <div><span>03</span><strong>Get response</strong><p>The sales team can manage your enquiry from the backend.</p></div>
+      </div>
+    </section>
+
+    <section class="section faq-section" id="faq">
+      <div>
+        <p class="eyebrow">Common questions</p>
+        <h2>Quick answers for buyers and dealers.</h2>
+      </div>
+      <div class="faq-list">
+        <details open>
+          <summary>Can I request bulk quantity for multiple products?</summary>
+          <p>Yes. Add products to enquiry and mention expected quantity, city, color preference and delivery requirement.</p>
+        </details>
+        <details>
+          <summary>Are products made from virgin plastic?</summary>
+          <p>The catalog and company profile focus on 100% virgin plastic and batch-wise quality checking.</p>
+        </details>
+        <details>
+          <summary>Can the company track stock and daily sales?</summary>
+          <p>Yes. The admin backend includes stock updates, stock-in entries, sold quantity records and day/month/year reports.</p>
+        </details>
+        <details>
+          <summary>Where is the manufacturing base?</summary>
+          <p>Manufacturing is listed at Koshi Kotwan UPSIDC area, Nabipur, Mathura, with head office in Greater Noida.</p>
+        </details>
       </div>
     </section>
 
@@ -228,6 +269,13 @@
   </main>
 
   <button class="floating-quote" data-scroll="#quote" aria-label="Open enquiry form">Enquiry</button>
+
+  <div class="product-modal hidden" id="productModal" role="dialog" aria-modal="true" aria-label="Product details">
+    <div class="modal-card">
+      <button class="modal-close" id="modalClose" aria-label="Close product details">Close</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
 
   <footer class="footer">
     <div>
