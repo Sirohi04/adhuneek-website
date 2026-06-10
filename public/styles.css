@@ -1337,6 +1337,38 @@ textarea:focus {
   line-height: 1.35;
 }
 
+.hero-location-strip {
+  width: min(520px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.hero-location-strip div {
+  padding: 14px 16px;
+  border: 1px solid rgba(8, 120, 215, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 14px 36px rgba(16, 32, 51, 0.07);
+  backdrop-filter: blur(14px);
+}
+
+.hero-location-strip span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hero-location-strip strong {
+  display: block;
+  margin-top: 4px;
+  color: #0e2238;
+  font-size: 1.35rem;
+}
+
 .hero-trust,
 .intro-badges {
   display: flex;
@@ -1835,9 +1867,7 @@ main,
 }
 
 .stage-panel {
-  right: 2%;
-  bottom: 7%;
-  background: linear-gradient(135deg, #0e2238, #101827);
+  display: none;
 }
 
 .floating-quote {
@@ -2052,6 +2082,10 @@ main,
 
   .hero-business-note {
     width: 100%;
+  }
+
+  .hero-location-strip {
+    grid-template-columns: 1fr;
   }
 
   .hero-stage {
