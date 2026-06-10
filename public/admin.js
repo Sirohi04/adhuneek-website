@@ -16,7 +16,6 @@ const periodReport = document.querySelector("#periodReport");
 const productReport = document.querySelector("#productReport");
 const ledgerList = document.querySelector("#ledgerList");
 const adminStatus = document.querySelector("#adminStatus");
-const rateCardTable = document.querySelector("#rateCardTable");
 const STOCK_COLORS = ["Blue", "Red", "Green", "Pink", "White", "Yellow"];
 
 localStorage.removeItem("adhuneekAdminToken");
@@ -85,7 +84,6 @@ async function loadDashboard() {
   renderMetrics();
   renderMovementOptions();
   renderReports();
-  renderRateCard();
   renderStockTable();
   renderInquiries();
   renderLedger();
@@ -127,18 +125,6 @@ function renderReports() {
       <span>Adjusted: ${row.adjusted}</span>
     </div>
   `).join("") : "<p>No product movement yet.</p>";
-}
-
-function renderRateCard() {
-  if (!rateCardTable) return;
-  rateCardTable.innerHTML = dashboardData.products.map(product => `
-    <div class="rate-card-row">
-      <strong>${product.name}</strong>
-      <span>${product.category}</span>
-      <span>${Number(product.rate || 0) ? `Rs. ${product.rate}` : "Rate not set"}</span>
-      <span>Total stock ${product.stock}</span>
-    </div>
-  `).join("");
 }
 
 function renderStockTable() {
@@ -204,23 +190,19 @@ function renderInquiries() {
     return;
   }
 
-  inquiries.innerHTML = dashboardData.inquiries.map(inquiry => `
-    <article class="inquiry">
-      <div>
-        <strong>${inquiry.name} | ${inquiry.phone}</strong>
-        <p>${inquiry.business || "Business not added"} ${inquiry.city ? `| ${inquiry.city}` : ""}</p>
-        <p>${inquiry.message || "No message"}</p>
-        <small>${inquiry.items.map(item => item.name).join(", ") || "No products selected"} | ${new Date(inquiry.createdAt).toLocaleString()}</small>
-      </div>
-      <label>Status
-        <select data-inquiry="${inquiry.id}">
-          ${["New", "Contacted", "Quoted", "Closed"].map(status => `
-            <option ${status === inquiry.status ? "selected" : ""}>${status}</option>
-          `).join("")}
-        </select>
-      </label>
-    </article>
-  `).join("");
+  const groups = ["New", "Contacted", "Quoted"];
+  inquiries.innerHTML = groups.map(group => {
+    const groupItems = dashboardData.inquiries.filter(inquiry => (inquiry.status || "New") === group);
+    return `
+      <section class="inquiry-group">
+        <div class="inquiry-group-head">
+          <h3>${group}</h3>
+          <span>${groupItems.length}</span>
+        </div>
+        ${groupItems.length ? groupItems.map(renderInquiryCard).join("") : `<p class="empty-group">No ${group.toLowerCase()} enquiries.</p>`}
+      </section>
+    `;
+  }).join("");
 
   inquiries.querySelectorAll("[data-inquiry]").forEach(select => {
     select.addEventListener("change", async () => {
@@ -236,6 +218,26 @@ function renderInquiries() {
       }
     });
   });
+}
+
+function renderInquiryCard(inquiry) {
+  return `
+    <article class="inquiry">
+      <div>
+        <strong>${inquiry.name} | ${inquiry.phone}</strong>
+        <p>${inquiry.business || "Business not added"} ${inquiry.city ? `| ${inquiry.city}` : ""}</p>
+        <p>${inquiry.message || "No message"}</p>
+        <small>${inquiry.items.map(item => item.name).join(", ") || "No products selected"} | ${new Date(inquiry.createdAt).toLocaleString()}</small>
+      </div>
+      <label>Status
+        <select data-inquiry="${inquiry.id}">
+          ${["New", "Contacted", "Quoted", "Closed"].map(status => `
+            <option ${status === inquiry.status ? "selected" : ""}>${status}</option>
+          `).join("")}
+        </select>
+      </label>
+    </article>
+  `;
 }
 
 function renderLedger() {

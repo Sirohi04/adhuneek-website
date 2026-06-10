@@ -139,8 +139,21 @@ function ensureMovements(db) {
 
 function ensureProductCommercials(db) {
   const defaultColors = ["Blue", "Red", "Green", "Pink", "White", "Yellow"];
+  const defaultRates = {
+    bucket: 95,
+    mug: 28,
+    tasla: 85,
+    tub: 140,
+    dustpan: 45,
+    "washing-machine-roller": 120,
+    "washing-machine-safety-cover": 65,
+    "bottle-jar-cap": 8,
+    dustbin: 165,
+    patra: 110,
+    "side-rack": 240
+  };
   db.products.forEach(product => {
-    if (typeof product.rate !== "number") product.rate = Number(product.rate || 0);
+    if (!Number(product.rate)) product.rate = defaultRates[product.id] || 0;
     if (!product.colorStock || typeof product.colorStock !== "object" || Array.isArray(product.colorStock)) {
       product.colorStock = {};
     }
@@ -406,12 +419,20 @@ async function handleApi(req, res) {
   const inquiryMatch = url.pathname.match(/^\/api\/admin\/inquiries\/([^/]+)$/);
   if (inquiryMatch && req.method === "PATCH") {
     const body = await readBody(req);
-    const inquiry = db.inquiries.find(i => i.id === inquiryMatch[1]);
+    const index = db.inquiries.findIndex(i => i.id === inquiryMatch[1]);
+    const inquiry = db.inquiries[index];
     if (!inquiry) {
       send(res, 404, { error: "Inquiry not found." });
       return;
     }
-    inquiry.status = String(body.status || inquiry.status);
+    const nextStatus = String(body.status || inquiry.status);
+    if (nextStatus === "Closed") {
+      db.inquiries.splice(index, 1);
+      await writeDb(db);
+      send(res, 200, { deleted: true });
+      return;
+    }
+    inquiry.status = nextStatus;
     await writeDb(db);
     send(res, 200, { inquiry });
     return;

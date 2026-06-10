@@ -1,6 +1,7 @@
 const productGrid = document.querySelector("#productGrid");
 const filters = document.querySelector("#filters");
 const productSearch = document.querySelector("#productSearch");
+const publicRateGrid = document.querySelector("#publicRateGrid");
 const selectedItems = document.querySelector("#selectedItems");
 const quoteForm = document.querySelector("#quoteForm");
 const formStatus = document.querySelector("#formStatus");
@@ -25,6 +26,7 @@ async function loadProducts() {
   products = data.products;
   renderFilters();
   renderProducts();
+  renderPublicRateCard();
 }
 
 function renderFilters() {
@@ -100,6 +102,21 @@ function renderProducts() {
       openProductModal(product);
     });
   });
+}
+
+function renderPublicRateCard() {
+  if (!publicRateGrid) return;
+  publicRateGrid.innerHTML = products.map(product => `
+    <article class="public-rate-card">
+      <img src="${product.image}" alt="${product.name}">
+      <div>
+        <span>${product.category}</span>
+        <strong>${product.name}</strong>
+        <p>${product.sizes}</p>
+      </div>
+      <b>${Number(product.rate || 0) ? `Rs. ${product.rate}` : "On request"}</b>
+    </article>
+  `).join("");
 }
 
 function addProductToEnquiry(product) {

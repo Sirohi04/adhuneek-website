@@ -90,8 +90,21 @@ function ensureMovements(db) {
 
 function ensureProductCommercials(db) {
   const defaultColors = ["Blue", "Red", "Green", "Pink", "White", "Yellow"];
+  const defaultRates = {
+    bucket: 95,
+    mug: 28,
+    tasla: 85,
+    tub: 140,
+    dustpan: 45,
+    "washing-machine-roller": 120,
+    "washing-machine-safety-cover": 65,
+    "bottle-jar-cap": 8,
+    dustbin: 165,
+    patra: 110,
+    "side-rack": 240
+  };
   db.products.forEach(product => {
-    if (typeof product.rate !== "number") product.rate = Number(product.rate || 0);
+    if (!Number(product.rate)) product.rate = defaultRates[product.id] || 0;
     if (!product.colorStock || typeof product.colorStock !== "object" || Array.isArray(product.colorStock)) {
       product.colorStock = {};
     }
@@ -365,12 +378,20 @@ async function handler(req, res) {
 
   const inquiryMatch = endpoint.match(/^\/admin\/inquiries\/([^/]+)$/);
   if (inquiryMatch && req.method === "PATCH") {
-    const inquiry = db.inquiries.find(i => i.id === inquiryMatch[1]);
+    const index = db.inquiries.findIndex(i => i.id === inquiryMatch[1]);
+    const inquiry = db.inquiries[index];
     if (!inquiry) {
       res.status(404).json({ error: "Inquiry not found." });
       return;
     }
-    inquiry.status = String(bodyOf(req).status || inquiry.status);
+    const nextStatus = String(bodyOf(req).status || inquiry.status);
+    if (nextStatus === "Closed") {
+      db.inquiries.splice(index, 1);
+      await writeDb(db);
+      res.status(200).json({ deleted: true });
+      return;
+    }
+    inquiry.status = nextStatus;
     await writeDb(db);
     res.status(200).json({ inquiry });
     return;
