@@ -66,6 +66,10 @@ function renderProducts() {
     </article>
   `).join("");
 
+  productGrid.querySelectorAll(".product-card").forEach((card, index) => {
+    card.style.transitionDelay = `${Math.min(index * 45, 220)}ms`;
+  });
+
   observeReveals();
 
   productGrid.querySelectorAll("[data-id]").forEach(button => {
