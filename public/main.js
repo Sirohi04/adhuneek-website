@@ -110,15 +110,20 @@ quoteForm.addEventListener("submit", async event => {
     category: product.category
   }));
 
-  const response = await fetch("/api/inquiries", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    formStatus.textContent = data.error || "Could not send enquiry.";
+  let data = {};
+  try {
+    const response = await fetch("/api/inquiries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    data = await response.json();
+    if (!response.ok) {
+      formStatus.textContent = data.error || "Could not send enquiry.";
+      return;
+    }
+  } catch (error) {
+    formStatus.textContent = "Backend is not reachable. Please try again.";
     return;
   }
 

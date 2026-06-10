@@ -15,6 +15,7 @@ const reportPeriod = document.querySelector("#reportPeriod");
 const periodReport = document.querySelector("#periodReport");
 const productReport = document.querySelector("#productReport");
 const ledgerList = document.querySelector("#ledgerList");
+const adminStatus = document.querySelector("#adminStatus");
 
 let token = localStorage.getItem("adhuneekAdminToken") || "";
 let dashboardData = null;
@@ -26,18 +27,39 @@ function headers() {
   };
 }
 
+function setAdminStatus(message, isError = false) {
+  if (!adminStatus) return;
+  adminStatus.textContent = message;
+  adminStatus.classList.toggle("error", isError);
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, options);
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed (${response.status})`);
+  }
+  return data;
+}
+
 loginForm.addEventListener("submit", async event => {
   event.preventDefault();
   loginStatus.textContent = "Checking password...";
   const password = new FormData(loginForm).get("password");
-  const response = await fetch("/api/admin/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password })
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    loginStatus.textContent = data.error || "Login failed.";
+  let data;
+  try {
+    data = await requestJson("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password })
+    });
+  } catch (error) {
+    loginStatus.textContent = error.message || "Login failed.";
     return;
   }
   token = data.token;
@@ -46,16 +68,18 @@ loginForm.addEventListener("submit", async event => {
 });
 
 async function loadDashboard() {
-  const response = await fetch(`/api/admin/dashboard?period=${reportPeriod?.value || "day"}`, { headers: headers() });
-  if (!response.ok) {
+  try {
+    dashboardData = await requestJson(`/api/admin/dashboard?period=${reportPeriod?.value || "day"}`, { headers: headers() });
+  } catch (error) {
     localStorage.removeItem("adhuneekAdminToken");
     loginPanel.classList.remove("hidden");
     dashboard.classList.add("hidden");
+    loginStatus.textContent = error.message || "Please login again.";
     return;
   }
-  dashboardData = await response.json();
   loginPanel.classList.add("hidden");
   dashboard.classList.remove("hidden");
+  setAdminStatus("");
   renderMetrics();
   renderMovementOptions();
   renderReports();
@@ -127,17 +151,23 @@ function renderStockTable() {
 }
 
 async function saveProduct(id) {
+  setAdminStatus("Saving stock...");
   const row = stockTable.querySelector(`[data-product="${id}"]`);
   const payload = {};
   row.querySelectorAll("[data-field]").forEach(input => {
     payload[input.dataset.field] = Number(input.value);
   });
-  await fetch(`/api/admin/products/${id}`, {
-    method: "PATCH",
-    headers: headers(),
-    body: JSON.stringify(payload)
-  });
-  await loadDashboard();
+  try {
+    await requestJson(`/api/admin/products/${id}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify(payload)
+    });
+    setAdminStatus("Stock updated.");
+    await loadDashboard();
+  } catch (error) {
+    setAdminStatus(error.message, true);
+  }
 }
 
 function renderInquiries() {
@@ -166,12 +196,16 @@ function renderInquiries() {
 
   inquiries.querySelectorAll("[data-inquiry]").forEach(select => {
     select.addEventListener("change", async () => {
-      await fetch(`/api/admin/inquiries/${select.dataset.inquiry}`, {
-        method: "PATCH",
-        headers: headers(),
-        body: JSON.stringify({ status: select.value })
-      });
-      await loadDashboard();
+      try {
+        await requestJson(`/api/admin/inquiries/${select.dataset.inquiry}`, {
+          method: "PATCH",
+          headers: headers(),
+          body: JSON.stringify({ status: select.value })
+        });
+        await loadDashboard();
+      } catch (error) {
+        setAdminStatus(error.message, true);
+      }
     });
   });
 }
@@ -196,36 +230,48 @@ function renderLedger() {
 
 productForm.addEventListener("submit", async event => {
   event.preventDefault();
+  setAdminStatus("Adding product...");
   const payload = Object.fromEntries(new FormData(productForm).entries());
   payload.stock = Number(payload.stock || 0);
   payload.lowStockAt = Number(payload.lowStockAt || 0);
-  await fetch("/api/admin/products", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(payload)
-  });
-  productForm.reset();
-  productForm.image.value = "/assets/products/bucket.jpg";
-  productForm.material.value = "100% virgin plastic";
-  productForm.stock.value = 100;
-  productForm.lowStockAt.value = 25;
-  await loadDashboard();
+  try {
+    await requestJson("/api/admin/products", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload)
+    });
+    productForm.reset();
+    productForm.image.value = "/assets/products/bucket.jpg";
+    productForm.material.value = "100% virgin plastic";
+    productForm.stock.value = 100;
+    productForm.lowStockAt.value = 25;
+    setAdminStatus("Product added.");
+    await loadDashboard();
+  } catch (error) {
+    setAdminStatus(error.message, true);
+  }
 });
 
 movementForm.addEventListener("submit", async event => {
   event.preventDefault();
+  setAdminStatus("Saving stock record...");
   const payload = Object.fromEntries(new FormData(movementForm).entries());
   payload.quantity = Number(payload.quantity || 0);
-  await fetch("/api/admin/movements", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(payload)
-  });
-  const previousDate = movementForm.date.value;
-  movementForm.reset();
-  movementForm.date.value = previousDate || new Date().toISOString().slice(0, 10);
-  movementForm.quantity.value = 1;
-  await loadDashboard();
+  try {
+    await requestJson("/api/admin/movements", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload)
+    });
+    const previousDate = movementForm.date.value;
+    movementForm.reset();
+    movementForm.date.value = previousDate || new Date().toISOString().slice(0, 10);
+    movementForm.quantity.value = 1;
+    setAdminStatus("Stock record saved.");
+    await loadDashboard();
+  } catch (error) {
+    setAdminStatus(error.message, true);
+  }
 });
 
 refreshData.addEventListener("click", loadDashboard);

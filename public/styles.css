@@ -659,6 +659,17 @@ textarea:focus {
   gap: 22px;
 }
 
+.admin-status {
+  min-height: 22px;
+  margin: -8px 0 0;
+  color: var(--green);
+  font-weight: 900;
+}
+
+.admin-status.error {
+  color: var(--coral);
+}
+
 .admin-topbar {
   display: flex;
   justify-content: space-between;
@@ -1642,5 +1653,37 @@ body {
     position: static;
     width: min(92vw, 360px);
     margin: 0;
+  }
+
+  .reveal,
+  .product-card.reveal,
+  .section.reveal,
+  .quality-band.reveal,
+  .catalog-cta.reveal,
+  .quote-section.reveal,
+  .stats-band.reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .product-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .product-card {
+    display: flex !important;
+    min-height: auto;
+  }
+
+  .product-image {
+    min-height: 220px;
+    height: 220px;
+  }
+
+  .product-content {
+    display: grid !important;
+    color: var(--ink);
   }
 }

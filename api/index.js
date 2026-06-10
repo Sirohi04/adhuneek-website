@@ -10,6 +10,11 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_TABLE = process.env.SUPABASE_TABLE || "adhuneek_state";
 const STATE_ID = "main";
 
+function normalizeSupabaseUrl(url) {
+  if (!url) return "";
+  return String(url).replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
+}
+
 function hasSupabase() {
   return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 }
@@ -35,9 +40,9 @@ function getDbPath() {
 
 async function readDb() {
   if (hasSupabase()) {
-    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${STATE_ID}&select=data`;
+    const url = `${normalizeSupabaseUrl(SUPABASE_URL)}/rest/v1/${SUPABASE_TABLE}?id=eq.${STATE_ID}&select=data`;
     const response = await fetch(url, { headers: supabaseHeaders(), cache: "no-store" });
-    if (!response.ok) throw new Error(`Supabase read failed: ${response.status}`);
+    if (!response.ok) throw new Error(`Supabase read failed: ${response.status} ${await response.text()}`);
     const rows = await response.json();
     if (rows[0] && rows[0].data) return rows[0].data;
     const db = initialDb();
@@ -49,16 +54,28 @@ async function readDb() {
 
 async function writeDb(db) {
   if (hasSupabase()) {
-    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`;
+    const url = `${normalizeSupabaseUrl(SUPABASE_URL)}/rest/v1/${SUPABASE_TABLE}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { ...supabaseHeaders(), Prefer: "resolution=merge-duplicates" },
       body: JSON.stringify({ id: STATE_ID, data: db, updated_at: new Date().toISOString() })
     });
-    if (!response.ok) throw new Error(`Supabase write failed: ${response.status}`);
+    if (!response.ok) throw new Error(`Supabase write failed: ${response.status} ${await response.text()}`);
     return;
   }
   fs.writeFileSync(getDbPath(), JSON.stringify(db, null, 2));
+}
+
+function bodyOf(req) {
+  if (!req.body) return {};
+  if (typeof req.body === "string") {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
+  }
+  return req.body;
 }
 
 function isAdmin(req) {
@@ -142,11 +159,23 @@ function csv(rows) {
   return rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
-  const db = await readDb();
   const pathQuery = Array.isArray(req.query.path) ? req.query.path.join("/") : req.query.path;
   const endpoint = pathQuery ? `/${pathQuery}` : (req.url.replace(/^\/api/, "").split("?")[0] || "/");
+
+  if (req.method === "GET" && endpoint === "/health") {
+    res.status(200).json({
+      ok: true,
+      storage: hasSupabase() ? "supabase" : "temporary",
+      supabaseUrlConfigured: Boolean(SUPABASE_URL),
+      serviceRoleConfigured: Boolean(SUPABASE_SERVICE_ROLE_KEY),
+      table: SUPABASE_TABLE
+    });
+    return;
+  }
+
+  const db = await readDb();
 
   if (req.method === "GET" && endpoint === "/products") {
     res.status(200).json({ company: db.company, products: publicProducts(db) });
@@ -154,7 +183,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "POST" && endpoint === "/inquiries") {
-    const body = req.body || {};
+    const body = bodyOf(req);
     const inquiry = {
       id: `INQ-${Date.now()}`,
       name: String(body.name || "").trim(),
@@ -177,7 +206,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "POST" && endpoint === "/admin/login") {
-    if ((req.body || {}).password === ADMIN_PASSWORD) {
+    if (bodyOf(req).password === ADMIN_PASSWORD) {
       res.status(200).json({ token: ADMIN_PASSWORD });
       return;
     }
@@ -217,7 +246,7 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "POST" && endpoint === "/admin/movements") {
     ensureMovements(db);
-    const body = req.body || {};
+    const body = bodyOf(req);
     const product = db.products.find(p => p.id === body.productId);
     if (!product) {
       res.status(404).json({ error: "Product not found." });
@@ -260,7 +289,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "POST" && endpoint === "/admin/products") {
-    const body = req.body || {};
+    const body = bodyOf(req);
     const id = String(body.id || body.name || `product-${Date.now()}`)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -290,7 +319,7 @@ module.exports = async function handler(req, res) {
       res.status(404).json({ error: "Product not found." });
       return;
     }
-    const body = req.body || {};
+    const body = bodyOf(req);
     ["name", "category", "sizes", "material", "image", "status"].forEach(key => {
       if (body[key] !== undefined) product[key] = String(body[key]);
     });
@@ -310,7 +339,7 @@ module.exports = async function handler(req, res) {
       res.status(404).json({ error: "Inquiry not found." });
       return;
     }
-    inquiry.status = String((req.body || {}).status || inquiry.status);
+    inquiry.status = String(bodyOf(req).status || inquiry.status);
     await writeDb(db);
     res.status(200).json({ inquiry });
     return;
@@ -333,4 +362,15 @@ module.exports = async function handler(req, res) {
   }
 
   res.status(404).json({ error: "Endpoint not found." });
+}
+
+module.exports = async function wrappedHandler(req, res) {
+  try {
+    await handler(req, res);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Server error",
+      storage: hasSupabase() ? "supabase" : "temporary"
+    });
+  }
 };
