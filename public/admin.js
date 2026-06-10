@@ -17,7 +17,8 @@ const productReport = document.querySelector("#productReport");
 const ledgerList = document.querySelector("#ledgerList");
 const adminStatus = document.querySelector("#adminStatus");
 
-let token = localStorage.getItem("adhuneekAdminToken") || "";
+localStorage.removeItem("adhuneekAdminToken");
+let token = "";
 let dashboardData = null;
 
 function headers() {
@@ -63,7 +64,6 @@ loginForm.addEventListener("submit", async event => {
     return;
   }
   token = data.token;
-  localStorage.setItem("adhuneekAdminToken", token);
   await loadDashboard();
 });
 
@@ -284,7 +284,3 @@ exportCsv.addEventListener("click", () => {
 exportMovements.addEventListener("click", () => {
   window.location.href = `/api/admin/export.csv?type=movements&token=${encodeURIComponent(token)}`;
 });
-
-if (token) {
-  loadDashboard();
-}
