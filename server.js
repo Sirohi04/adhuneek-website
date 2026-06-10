@@ -5,8 +5,13 @@ const path = require("path");
 const PORT = Number(process.env.PORT || 4173);
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, "public");
-const DB_PATH = path.join(ROOT, "data.json");
+const SOURCE_DB_PATH = path.join(ROOT, "data.json");
+const RUNTIME_DB_PATH = path.join(process.env.TMPDIR || "/tmp", "adhuneek-data.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "adhuneek2026";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_TABLE = process.env.SUPABASE_TABLE || "adhuneek_state";
+const STATE_ID = "main";
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -20,12 +25,56 @@ const types = {
   ".svg": "image/svg+xml"
 };
 
-function readDb() {
-  return JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
+function normalizeSupabaseUrl(url) {
+  if (!url) return "";
+  return String(url).replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
 }
 
-function writeDb(db) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+function hasSupabase() {
+  return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+}
+
+function supabaseHeaders() {
+  return {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    "Content-Type": "application/json"
+  };
+}
+
+function getRuntimeDbPath() {
+  if (!fs.existsSync(RUNTIME_DB_PATH)) {
+    fs.copyFileSync(SOURCE_DB_PATH, RUNTIME_DB_PATH);
+  }
+  return RUNTIME_DB_PATH;
+}
+
+async function readDb() {
+  if (hasSupabase()) {
+    const endpoint = `${normalizeSupabaseUrl(SUPABASE_URL)}/rest/v1/${SUPABASE_TABLE}?id=eq.${STATE_ID}&select=data`;
+    const response = await fetch(endpoint, { headers: supabaseHeaders(), cache: "no-store" });
+    if (!response.ok) throw new Error(`Supabase read failed: ${response.status} ${await response.text()}`);
+    const rows = await response.json();
+    if (rows[0] && rows[0].data) return rows[0].data;
+    const db = JSON.parse(fs.readFileSync(SOURCE_DB_PATH, "utf8"));
+    await writeDb(db);
+    return db;
+  }
+  return JSON.parse(fs.readFileSync(getRuntimeDbPath(), "utf8"));
+}
+
+async function writeDb(db) {
+  if (hasSupabase()) {
+    const endpoint = `${normalizeSupabaseUrl(SUPABASE_URL)}/rest/v1/${SUPABASE_TABLE}`;
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { ...supabaseHeaders(), Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify({ id: STATE_ID, data: db, updated_at: new Date().toISOString() })
+    });
+    if (!response.ok) throw new Error(`Supabase write failed: ${response.status} ${await response.text()}`);
+    return;
+  }
+  fs.writeFileSync(getRuntimeDbPath(), JSON.stringify(db, null, 2));
 }
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
@@ -152,7 +201,18 @@ function movementReport(db, period = "day") {
 
 async function handleApi(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const db = readDb();
+  const db = await readDb();
+
+  if (req.method === "GET" && url.pathname === "/api/health") {
+    send(res, 200, {
+      ok: true,
+      storage: hasSupabase() ? "supabase" : "temporary",
+      supabaseUrlConfigured: Boolean(SUPABASE_URL),
+      serviceRoleConfigured: Boolean(SUPABASE_SERVICE_ROLE_KEY),
+      table: SUPABASE_TABLE
+    });
+    return;
+  }
 
   if (req.method === "GET" && url.pathname === "/api/products") {
     send(res, 200, { company: db.company, products: publicProducts(db) });
@@ -177,7 +237,7 @@ async function handleApi(req, res) {
       return;
     }
     db.inquiries.unshift(inquiry);
-    writeDb(db);
+    await writeDb(db);
     send(res, 201, { inquiry });
     return;
   }
@@ -258,7 +318,7 @@ async function handleApi(req, res) {
       createdAt: new Date().toISOString()
     };
     db.movements.unshift(movement);
-    writeDb(db);
+    await writeDb(db);
     send(res, 201, { movement, product, report: movementReport(db, "day") });
     return;
   }
@@ -287,7 +347,7 @@ async function handleApi(req, res) {
       featured: Boolean(body.featured)
     };
     db.products.unshift(product);
-    writeDb(db);
+    await writeDb(db);
     send(res, 201, { product });
     return;
   }
@@ -307,7 +367,7 @@ async function handleApi(req, res) {
       if (body[key] !== undefined) product[key] = Number(body[key]);
     });
     if (body.featured !== undefined) product.featured = Boolean(body.featured);
-    writeDb(db);
+    await writeDb(db);
     send(res, 200, { product });
     return;
   }
@@ -321,7 +381,7 @@ async function handleApi(req, res) {
       return;
     }
     inquiry.status = String(body.status || inquiry.status);
-    writeDb(db);
+    await writeDb(db);
     send(res, 200, { inquiry });
     return;
   }
