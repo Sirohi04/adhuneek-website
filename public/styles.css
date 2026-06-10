@@ -1585,6 +1585,7 @@ body {
 @media (max-width: 560px) {
   .hero {
     padding-inline: 18px;
+    padding-top: 34px;
   }
 
   .hero h1 {
@@ -1598,5 +1599,48 @@ body {
   .hero-business-note img {
     width: 48px;
     height: 48px;
+  }
+
+  .hero-stage {
+    min-height: auto;
+    display: grid;
+    gap: 16px;
+    place-items: center;
+    margin-top: 12px;
+  }
+
+  .orbit {
+    width: min(92vw, 390px);
+    min-width: 0;
+    aspect-ratio: 1;
+    transform: none;
+  }
+
+  .orbit img {
+    padding: 8px;
+  }
+
+  .orbit img:nth-child(1) {
+    width: 48%;
+    left: 26%;
+    top: 5%;
+  }
+
+  .orbit img:nth-child(2) {
+    width: 44%;
+    left: 6%;
+    bottom: 9%;
+  }
+
+  .orbit img:nth-child(3) {
+    width: 34%;
+    right: 6%;
+    bottom: 8%;
+  }
+
+  .stage-panel {
+    position: static;
+    width: min(92vw, 360px);
+    margin: 0;
   }
 }

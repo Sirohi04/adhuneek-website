@@ -5,6 +5,26 @@ const ROOT = path.join(__dirname, "..");
 const SOURCE_DB_PATH = path.join(ROOT, "data.json");
 const RUNTIME_DB_PATH = path.join("/tmp", "adhuneek-data.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "adhuneek2026";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_TABLE = process.env.SUPABASE_TABLE || "adhuneek_state";
+const STATE_ID = "main";
+
+function hasSupabase() {
+  return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+}
+
+function initialDb() {
+  return JSON.parse(fs.readFileSync(SOURCE_DB_PATH, "utf8"));
+}
+
+function supabaseHeaders() {
+  return {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    "Content-Type": "application/json"
+  };
+}
 
 function getDbPath() {
   if (!fs.existsSync(RUNTIME_DB_PATH)) {
@@ -13,11 +33,31 @@ function getDbPath() {
   return RUNTIME_DB_PATH;
 }
 
-function readDb() {
+async function readDb() {
+  if (hasSupabase()) {
+    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${STATE_ID}&select=data`;
+    const response = await fetch(url, { headers: supabaseHeaders(), cache: "no-store" });
+    if (!response.ok) throw new Error(`Supabase read failed: ${response.status}`);
+    const rows = await response.json();
+    if (rows[0] && rows[0].data) return rows[0].data;
+    const db = initialDb();
+    await writeDb(db);
+    return db;
+  }
   return JSON.parse(fs.readFileSync(getDbPath(), "utf8"));
 }
 
-function writeDb(db) {
+async function writeDb(db) {
+  if (hasSupabase()) {
+    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { ...supabaseHeaders(), Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify({ id: STATE_ID, data: db, updated_at: new Date().toISOString() })
+    });
+    if (!response.ok) throw new Error(`Supabase write failed: ${response.status}`);
+    return;
+  }
   fs.writeFileSync(getDbPath(), JSON.stringify(db, null, 2));
 }
 
@@ -103,8 +143,10 @@ function csv(rows) {
 }
 
 module.exports = async function handler(req, res) {
-  const db = readDb();
-  const endpoint = req.url.replace(/^\/api/, "").split("?")[0] || "/";
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  const db = await readDb();
+  const pathQuery = Array.isArray(req.query.path) ? req.query.path.join("/") : req.query.path;
+  const endpoint = pathQuery ? `/${pathQuery}` : (req.url.replace(/^\/api/, "").split("?")[0] || "/");
 
   if (req.method === "GET" && endpoint === "/products") {
     res.status(200).json({ company: db.company, products: publicProducts(db) });
@@ -129,7 +171,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     db.inquiries.unshift(inquiry);
-    writeDb(db);
+    await writeDb(db);
     res.status(201).json({ inquiry });
     return;
   }
@@ -207,13 +249,37 @@ module.exports = async function handler(req, res) {
       createdAt: new Date().toISOString()
     };
     db.movements.unshift(movement);
-    writeDb(db);
+    await writeDb(db);
     res.status(201).json({ movement, product, report: movementReport(db, "day") });
     return;
   }
 
   if (req.method === "GET" && endpoint === "/admin/reports") {
     res.status(200).json(movementReport(db, req.query.period || "day"));
+    return;
+  }
+
+  if (req.method === "POST" && endpoint === "/admin/products") {
+    const body = req.body || {};
+    const id = String(body.id || body.name || `product-${Date.now()}`)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    const product = {
+      id,
+      name: String(body.name || "New Product"),
+      category: String(body.category || "General"),
+      sizes: String(body.sizes || "Custom"),
+      material: String(body.material || "Virgin plastic"),
+      image: String(body.image || "/assets/products/bucket.jpg"),
+      stock: Number(body.stock || 0),
+      lowStockAt: Number(body.lowStockAt || 50),
+      status: String(body.status || "In stock"),
+      featured: Boolean(body.featured)
+    };
+    db.products.unshift(product);
+    await writeDb(db);
+    res.status(201).json({ product });
     return;
   }
 
@@ -232,8 +298,21 @@ module.exports = async function handler(req, res) {
       if (body[key] !== undefined) product[key] = Number(body[key]);
     });
     if (body.featured !== undefined) product.featured = Boolean(body.featured);
-    writeDb(db);
+    await writeDb(db);
     res.status(200).json({ product });
+    return;
+  }
+
+  const inquiryMatch = endpoint.match(/^\/admin\/inquiries\/([^/]+)$/);
+  if (inquiryMatch && req.method === "PATCH") {
+    const inquiry = db.inquiries.find(i => i.id === inquiryMatch[1]);
+    if (!inquiry) {
+      res.status(404).json({ error: "Inquiry not found." });
+      return;
+    }
+    inquiry.status = String((req.body || {}).status || inquiry.status);
+    await writeDb(db);
+    res.status(200).json({ inquiry });
     return;
   }
 
